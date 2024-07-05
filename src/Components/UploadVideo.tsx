@@ -12,6 +12,7 @@ interface ApiParams {
 const UploadVideo: React.FC = () => {
   const [textValue, setTextValue] = useState<string>("");
   const [file, setFileValue] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   // get the uploadId
 
@@ -105,49 +106,56 @@ const UploadVideo: React.FC = () => {
     }
   };
 
-  // Upload videos function
-  const uploadFile = async (file: any) => {
-    const fileName = file.name;
+  // // Upload videos function
+  // const uploadFile = async (file: any) => {
+  //   const fileName = file.name;
 
-    const uploadId: any = await startMultipartUpload(fileName);
-    const uID = uploadId.uploadId;
+  //   const uploadId: any = await startMultipartUpload(fileName);
+  //   const uID = uploadId.uploadId;
 
-    const partSize = 5 * 1024 * 1024;
+  //   const partSize = 5 * 1024 * 1024;
 
-    let partNumber = 0;
+  //   let partNumber = 0;
 
-    const uploadPromises = [];
+  //   const uploadPromises = [];
 
-    for (let start = 0; start < file.size; start += partSize) {
-      partNumber++;
-      const part = partNumber;
+  //   for (let start = 0; start < file.size; start += partSize) {
+  //     partNumber++;
+  //     const part = partNumber;
 
-      const partData = file.slice(start, start + partSize);
-      uploadPromises.push(
-        getPreSignedUrl(fileName, uID, part)
-          .then(({ url }: any) => uploadPart(url, part, partData))
-          .then((ETag) => ({ ETag, PartNumber: part }))
-      );
-    }
+  //     const partData = file.slice(start, start + partSize);
+  //     uploadPromises.push(
+  //       getPreSignedUrl(fileName, uID, part)
+  //         .then(({ url }: any) => uploadPart(url, part, partData))
+  //         .then((ETag) => ({ ETag, PartNumber: part }))
+  //     );
+  //   }
 
-    const parts = await Promise.all(uploadPromises);
+  //   const parts = await Promise.all(uploadPromises);
 
-    const sortPromises = parts.sort((a, b) => a.PartNumber - b.PartNumber);
+  //   const sortPromises = parts.sort((a, b) => a.PartNumber - b.PartNumber);
 
-    const completeUploadConfirmation = await completeMultiPartUpload(
-      fileName,
-      uID,
-      sortPromises
-    );
+  //   const completeUploadConfirmation = await completeMultiPartUpload(
+  //     fileName,
+  //     uID,
+  //     sortPromises
+  //   );
 
-    console.log("Upload Completed !!", completeUploadConfirmation);
-  };
+  //   console.log("Upload Completed !!", completeUploadConfirmation);
+  // };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTextValue(event.target.value);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+    };
+    if (file) {
+      reader.readAsDataURL(file);
+    }
     if (event.target.files && event.target.files[0]) {
       const selectedFiles = event.target.files[0];
       setFileValue(selectedFiles);
@@ -164,34 +172,49 @@ const UploadVideo: React.FC = () => {
       };
       console.log(file);
       //await apiCall(apiParams);
-      await uploadFile(file);
+      // await uploadFile(file);
     } else {
       console.error("File not selected");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
-        Text Input:
-        <input type="text" value={textValue} onChange={handleTextChange} />
-      </label>
-      <br />
-      <label>
-        Video Upload:
-        <input type="file" onChange={handleFileChange} />
-      </label>
-      <br />
-      <button type="submit">Submit</button>
-      <br />
-      <br />
-      {/* {file && (
-        <div>
-          <p>Preview:</p>
-          <video src={file.preview} controls width="400" />
-        </div>
-      )} */}
-    </form>
+    <div className="upload-form-container">
+      <form onSubmit={handleSubmit} className="upload-form">
+        <label className="form-label">
+          Title
+          <input
+            type="text"
+            value={textValue}
+            onChange={handleTextChange}
+            className="form-input"
+            placeholder="Enter video title"
+          />
+        </label>
+        <br />
+        <label className="form-label">
+          Upload Video
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="form-input"
+            accept="video/*"
+          />
+        </label>
+        <br />
+        <button type="submit" className="form-button">
+          Upload
+        </button>
+        <br />
+        <br />
+        {preview && (
+          <div className="preview-container">
+            <p>Preview:</p>
+            <video src={preview} controls width="400" className="video-preview" />
+          </div>
+        )}
+      </form>
+    </div>
   );
 };
 
